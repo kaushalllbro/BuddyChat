@@ -1,0 +1,6 @@
+{
+  "name": "BuddyChat",
+  "permissions": {
+    "microphone": true
+  }
+}
