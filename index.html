@@ -11,18 +11,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #0b141a;
-            --bg-panel: #202c33;
-            --bg-item: #2a3942;
-            --accent-orange: #25d366;
-            --accent-blue: #34b7f1;
-            --text-main: #e9edef;
-            --text-dim: #8696a0;
-            --wa-wallpaper-1: rgba(255,255,255,0.03);
-            --wa-wallpaper-2: rgba(255,255,255,0.015);
+            --bg-deep: #050a14;
+            --bg-panel: #0d1526;
+            --bg-item: #162238;
+            --accent-orange: #ff8c00;
+            --accent-blue: #00d4ff;
+            --text-main: #e0e6ed;
+            --text-dim: #94a3b8;
+            --wa-wallpaper-1: rgba(0, 212, 255, 0.04);
+            --wa-wallpaper-2: rgba(255, 140, 0, 0.025);
         }
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             background-color: var(--bg-deep);
             color: var(--text-main);
             margin: 0;
@@ -33,17 +33,17 @@
         }
         #app {
             width: 100%;
-            max-width: 1280px;
+            max-width: 1200px;
             display: flex;
             height: 100vh;
             position: relative;
             background: var(--bg-deep);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.1);
         }
         #sidebar {
             width: 320px;
             background-color: var(--bg-panel);
-            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            border-right: 1px solid rgba(0, 212, 255, 0.2);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
@@ -61,44 +61,47 @@
             }
         }
         .sidebar-item {
-            padding: 13px 16px;
+            padding: 14px 18px;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.05);
         }
         .sidebar-item:hover {
-            background-color: rgba(255, 255, 255, 0.04);
+            background-color: rgba(0, 212, 255, 0.05);
+            border-left: 3px solid var(--accent-orange);
         }
         .sidebar-item.active {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: rgba(0, 212, 255, 0.1);
+            border-left: 3px solid var(--accent-blue);
         }
         .tab-btn {
             flex: 1;
             padding: 12px;
             text-align: center;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 700;
             color: var(--text-dim);
-            border-bottom: 3px solid transparent;
+            border-bottom: 2px solid transparent;
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 1px;
         }
         .tab-btn.active {
-            color: var(--text-main);
+            color: var(--accent-orange);
             border-bottom-color: var(--accent-orange);
+            text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
         }
         .badge {
             background: var(--accent-orange);
-            color: #0b141a;
+            color: white;
             font-size: 10px;
             padding: 2px 6px;
-            border-radius: 10px;
+            border-radius: 4px;
             margin-left: 4px;
-            font-weight: 700;
+            box-shadow: 0 0 8px var(--accent-orange);
         }
         #main {
             flex: 1;
@@ -110,69 +113,72 @@
         }
         #chat-header {
             background-color: var(--bg-panel);
-            padding: 12px 16px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
-            gap: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            gap: 16px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
             z-index: 30;
         }
         #chat {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 18px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            background-color: #0b141a;
+            gap: 12px;
+            background-color: var(--bg-deep);
             background-image:
                 radial-gradient(circle at 25px 25px, var(--wa-wallpaper-1) 2px, transparent 0),
                 radial-gradient(circle at 75px 75px, var(--wa-wallpaper-2) 2px, transparent 0);
             background-size: 100px 100px;
         }
         .bubble {
-            max-width: min(78%, 520px);
-            padding: 8px 10px 6px;
-            border-radius: 8px;
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 12px;
             position: relative;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.18);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             cursor: pointer;
             word-wrap: break-word;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .me {
-            background: #005c4b;
+            background: linear-gradient(135deg, #005c4b 0%, #004d3f 100%);
             align-self: flex-end;
             border-top-right-radius: 2px;
+            border-color: rgba(0, 212, 255, 0.2);
         }
         .other {
-            background: #202c33;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             align-self: flex-start;
             border-top-left-radius: 2px;
+            border-color: rgba(255, 140, 0, 0.2);
         }
         .msg-name {
             font-size: 12px;
-            font-weight: 600;
-            color: #53bdeb;
+            font-weight: 700;
+            color: var(--accent-blue);
             margin-bottom: 4px;
+            text-transform: uppercase;
         }
         .reply-preview {
-            background: rgba(17, 27, 33, 0.45);
+            background: rgba(0,0,0,0.3);
             border-left: 3px solid var(--accent-orange);
-            padding: 6px 8px;
+            padding: 6px 10px;
             margin-bottom: 6px;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #d1d7db;
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text-dim);
         }
         .meta {
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            gap: 4px;
-            margin-top: 4px;
+            gap: 6px;
+            margin-top: 6px;
             font-size: 11px;
-            color: #aebac1;
+            color: var(--text-dim);
         }
         .formatted-message p { margin: 0; }
         .formatted-message ul, .formatted-message ol {
@@ -204,19 +210,19 @@
             width: 100%;
             height: 100%;
             display: block;
-            filter: drop-shadow(0 0 10px rgba(52, 183, 241, 0.22));
+            filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.35));
         }
         #hud {
-            background-color: #202c33;
-            padding: 10px 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background-color: var(--bg-panel);
+            padding: 12px;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            gap: 10px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
         }
         #reply-bar {
-            background-color: rgba(255, 255, 255, 0.04);
+            background-color: rgba(0, 212, 255, 0.05);
             border-left: 4px solid var(--accent-orange);
             padding: 10px;
             border-radius: 6px;
@@ -265,18 +271,17 @@
             border: none;
         }
         .icon-btn:hover {
-            background-color: rgba(255, 255, 255, 0.06);
-            color: var(--text-main);
+            background-color: rgba(0, 212, 255, 0.1);
+            color: var(--accent-blue);
         }
         .send-btn {
-            background: var(--accent-orange);
-            color: #0b141a;
-            box-shadow: none;
+            background: linear-gradient(135deg, var(--accent-orange) 0%, #e67e00 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
         }
         .send-btn:hover {
-            transform: none;
-            box-shadow: none;
-            background: #21c45a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
         }
         .modal-overlay {
             position: fixed;
@@ -458,6 +463,7 @@
                 <div id="status" class="text-xs text-[var(--text-dim)] uppercase tracking-widest opacity-70">...</div>
             </div>
             <div id="group-actions" class="hidden flex gap-1">
+                <button id="icebreaker-btn" onclick="generateIcebreaker()" class="icon-btn hidden" title="AI Icebreaker"><i data-lucide="sparkles" size="20"></i></button>
                 <button id="edit-group-btn" onclick="editCurrentGroup()" class="icon-btn hidden" title="Edit Group Name"><i data-lucide="pencil" size="20"></i></button>
                 <button id="delete-chat-btn" onclick="deleteCurrentChat()" class="icon-btn text-red-500 hover:bg-red-500/10" title="Delete Chat"><i data-lucide="trash-2" size="20"></i></button>
                 <button id="invite-btn" onclick="openInviteModal()" class="icon-btn" title="Invite Friend"><i data-lucide="user-plus" size="20"></i></button>
@@ -517,6 +523,13 @@
                 <input type="text" id="custom-id-input" placeholder="Enter custom ID (optional)">
                 <p class="text-[10px] text-[var(--text-dim)]">Changing ID/Username: Max 6 edits in 30m, then 14d cooldown.</p>
             </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs text-[var(--accent-blue)] uppercase font-bold">Notifications</label>
+                <input type="text" id="notification-title-input" placeholder="Notification title prefix">
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="notify-messages-toggle" checked> Message alerts</label>
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="notify-stories-toggle" checked> Story alerts</label>
+                <button onclick="requestNotificationPermission()" class="bg-[#3b4a54]">Enable Push Alerts</button>
+            </div>
             <button onclick="saveProfile()">Save Profile</button>
         </div>
     </div>
@@ -556,8 +569,9 @@
         <div class="modal relative">
             <button onclick="closeModals()" class="absolute top-4 right-4 text-[var(--text-dim)] hover:text-white bg-transparent border-none"><i data-lucide="x" size="20"></i></button>
             <h2 class="text-xl font-bold">Add Story</h2>
+            <input type="text" id="story-title-input" placeholder="Story Title">
             <textarea id="story-text-input" rows="4" placeholder="What's on your story?"></textarea>
-            <input type="file" id="story-file-input" accept="image/*">
+            <input type="file" id="story-file-input" accept="image/*,video/*">
             <div class="flex gap-2">
                 <button onclick="createStory()" class="flex-1">Post Story</button>
                 <button onclick="closeModals()" class="flex-1 bg-[#3b4a54]">Cancel</button>
@@ -637,6 +651,9 @@
     let listenersInitialized = false;
     let nexusReplyInFlight = false;
     let blockedUsers = {};
+    let notificationSettings = JSON.parse(localStorage.getItem("notificationSettings") || '{"messages":true,"stories":true,"titlePrefix":"BudChat"}');
+    let notificationUnsubscribers = [];
+    let notificationBootstrapState = {};
 
     if (!userId) {
         userId = "U_" + Math.random().toString(36).substring(2, 10);
@@ -651,6 +668,7 @@
     renderNexusAiEntry();
     initFriendListeners();
     initStoriesListener();
+    initNotificationListeners();
 
     if (!userName) {
         openProfileModal(true);
@@ -693,7 +711,7 @@
                 <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[rgba(0,212,255,0.12)] border border-[rgba(0,212,255,0.35)] p-1">${getNexusLogoMarkup()}</div>
                 <div class="flex-1 truncate">
                     <div class="font-bold text-sm tracking-wide">${NEXUS_AI_NAME}</div>
-                    <div class="text-[10px] text-[var(--accent-blue)] uppercase">Groq-powered assistant</div>
+                    <div class="text-[10px] text-[var(--accent-blue)] uppercase">Ready to Help!!</div>
                 </div>
             </div>
         `;
@@ -707,6 +725,9 @@
     function updateUserInfo() {
         displayName.innerText = userName;
         userIdDisplay.innerText = "ID: " + (customId || userId);
+        document.getElementById("notification-title-input").value = notificationSettings.titlePrefix || "BudChat";
+        document.getElementById("notify-messages-toggle").checked = notificationSettings.messages !== false;
+        document.getElementById("notify-stories-toggle").checked = notificationSettings.stories !== false;
         if (userAvatarUrl) {
             userAvatar.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img" referrerPolicy="no-referrer">`;
             document.getElementById("modal-avatar-preview").innerHTML = `<img src="${userAvatarUrl}" class="avatar-img" referrerPolicy="no-referrer">`;
@@ -740,6 +761,9 @@
         modal.style.display = "flex";
         document.getElementById("name-input").value = userName || "";
         document.getElementById("custom-id-input").value = customId || "";
+        document.getElementById("notification-title-input").value = notificationSettings.titlePrefix || "BudChat";
+        document.getElementById("notify-messages-toggle").checked = notificationSettings.messages !== false;
+        document.getElementById("notify-stories-toggle").checked = notificationSettings.stories !== false;
         if (userAvatarUrl) {
             document.getElementById("modal-avatar-preview").innerHTML = `<img src="${userAvatarUrl}" class="avatar-img" referrerPolicy="no-referrer">`;
         } else {
@@ -790,6 +814,12 @@
     async function saveProfile() {
         const newName = document.getElementById("name-input").value.trim();
         const newCustomId = document.getElementById("custom-id-input").value.trim();
+        notificationSettings = {
+            titlePrefix: document.getElementById("notification-title-input").value.trim() || "BudChat",
+            messages: document.getElementById("notify-messages-toggle").checked,
+            stories: document.getElementById("notify-stories-toggle").checked
+        };
+        localStorage.setItem("notificationSettings", JSON.stringify(notificationSettings));
         if (!newName) return;
         const now = Date.now();
         if (userName && newName !== userName) {
@@ -821,6 +851,23 @@
         closeModals();
     }
     window.saveProfile = saveProfile;
+
+    async function requestNotificationPermission() {
+        if (!("Notification" in window)) return alert("Notifications are not supported in this environment.");
+        const result = await Notification.requestPermission();
+        if (result === "granted") {
+            alert("Notifications enabled!");
+        }
+    }
+    window.requestNotificationPermission = requestNotificationPermission;
+
+    function sendNotification(type, title, body, tag) {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        if (type === "message" && notificationSettings.messages === false) return;
+        if (type === "story" && notificationSettings.stories === false) return;
+        const prefix = notificationSettings.titlePrefix || "BudChat";
+        new Notification(`${prefix} • ${title}`, { body, tag });
+    }
 
     function createGroup() {
         const gName = document.getElementById("group-name-input").value.trim();
@@ -936,6 +983,7 @@
                     blockedList.appendChild(row);
                 }, { onlyOnce: true });
             });
+            initNotificationListeners();
         });
 
         onValue(ref(db, `friendRequests/${userId}/incoming`), snap => {
@@ -962,6 +1010,7 @@
             const container = document.getElementById("my-friends");
             container.innerHTML = '<div class="text-[10px] text-[var(--accent-blue)] mb-2 uppercase font-bold tracking-widest">Direct Messages</div>';
             const data = snap.val();
+            initNotificationListeners();
             if (data) {
                 Object.keys(data).forEach(fId => {
                     onValue(ref(db, `users/${fId}`), uSnap => {
@@ -997,19 +1046,23 @@
     window.openStoryModal = openStoryModal;
 
     async function createStory() {
+        const titleValue = document.getElementById("story-title-input").value.trim();
         const textValue = document.getElementById("story-text-input").value.trim();
         const file = document.getElementById("story-file-input").files[0];
         if (!textValue && !file) return;
 
-        const saveStory = async (image = "") => {
+        const saveStory = async (media = "", mediaType = "") => {
             await push(ref(db, `stories/${userId}`), {
                 userId,
                 name: userName,
                 avatar: userAvatarUrl,
+                title: titleValue,
                 text: textValue,
-                image,
+                media,
+                mediaType,
                 createdAt: Date.now()
             });
+            document.getElementById("story-title-input").value = "";
             document.getElementById("story-text-input").value = "";
             document.getElementById("story-file-input").value = "";
             closeModals();
@@ -1017,7 +1070,7 @@
 
         if (file) {
             const reader = new FileReader();
-            reader.onload = e => saveStory(e.target.result);
+            reader.onload = e => saveStory(e.target.result, file.type.startsWith("video/") ? "video" : "image");
             reader.readAsDataURL(file);
         } else {
             await saveStory();
@@ -1029,10 +1082,12 @@
         get(ref(db, `stories/${ownerId}/${storyId}`)).then(snap => {
             const story = snap.val();
             if (!story) return;
-            document.getElementById("story-viewer-name").innerText = `${story.name || "Story"} • ${new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            document.getElementById("story-viewer-name").innerText = `${story.name || "Story"} • ${story.title || "Update"} • ${new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             document.getElementById("story-viewer-body").innerHTML = `
-                ${story.image ? `<img src="${story.image}" class="w-full rounded-xl max-h-80 object-cover" referrerPolicy="no-referrer">` : ""}
-                ${story.text ? `<p class="leading-relaxed">${story.text}</p>` : '<p class="italic text-[var(--text-dim)]">Photo story</p>'}
+                ${story.media && story.mediaType === "video" ? `<video controls src="${story.media}" class="w-full rounded-xl max-h-80 bg-black" referrerPolicy="no-referrer"></video>` : ""}
+                ${story.media && story.mediaType !== "video" ? `<img src="${story.media}" class="w-full rounded-xl max-h-80 object-cover" referrerPolicy="no-referrer">` : ""}
+                ${story.title ? `<p class="font-bold text-base">${story.title}</p>` : ""}
+                ${story.text ? `<p class="leading-relaxed">${story.text}</p>` : `<p class="italic text-[var(--text-dim)]">${story.mediaType === "video" ? "Video story" : "Photo story"}</p>`}
             `;
             document.getElementById("story-viewer-modal").style.display = "flex";
         });
@@ -1094,7 +1149,7 @@
                 html += `
                     <button onclick="viewStory('${ownerId}', '${storyId}')" class="min-w-[72px] flex flex-col items-center gap-2 bg-[var(--bg-item)] rounded-2xl p-2 border border-[rgba(255,255,255,0.06)]">
                         <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--accent-orange)] bg-[var(--bg-panel)] flex items-center justify-center text-white font-bold">
-                            ${latestStory.image ? `<img src="${latestStory.image}" class="w-full h-full object-cover" referrerPolicy="no-referrer">` : (latestStory.name || "?").charAt(0).toUpperCase()}
+                            ${latestStory.media && latestStory.mediaType !== "video" ? `<img src="${latestStory.media}" class="w-full h-full object-cover" referrerPolicy="no-referrer">` : latestStory.mediaType === "video" ? `<div class="w-full h-full flex items-center justify-center text-[10px] font-bold">VIDEO</div>` : (latestStory.name || "?").charAt(0).toUpperCase()}
                         </div>
                         <span class="text-[11px] truncate max-w-[60px]">${ownerId === userId ? "You" : (latestStory.name || "Friend")}</span>
                     </button>
@@ -1103,6 +1158,60 @@
 
             html += "</div>";
             storiesPanel.innerHTML = html;
+        });
+    }
+
+    function setupNotificationListener(path, type, formatter) {
+        get(ref(db, path)).then(initialSnap => {
+            const existingIds = new Set(initialSnap.exists() ? Object.keys(initialSnap.val()) : []);
+            notificationBootstrapState[path] = existingIds;
+            const unsubscribe = onChildAdded(ref(db, path), snap => {
+                const seenIds = notificationBootstrapState[path];
+                if (seenIds && seenIds.has(snap.key)) return;
+                if (seenIds) seenIds.add(snap.key);
+                const payload = formatter(snap.val(), snap.key);
+                if (payload) sendNotification(type, payload.title, payload.body, `${type}:${path}:${snap.key}`);
+            });
+            notificationUnsubscribers.push(unsubscribe);
+        });
+    }
+
+    async function initNotificationListeners() {
+        notificationUnsubscribers.forEach(unsub => unsub && unsub());
+        notificationUnsubscribers = [];
+        notificationBootstrapState = {};
+
+        const friendsSnap = await get(ref(db, `users/${userId}/friends`));
+        const friends = Object.keys(friendsSnap.val() || {}).filter(friendId => !blockedUsers[friendId]);
+        const groupsSnap = await get(ref(db, "groups"));
+        const groups = groupsSnap.val() || {};
+
+        friends.forEach(friendId => {
+            setupNotificationListener(`messages/${getDMId(friendId)}`, "message", (msg) => {
+                if (!msg || msg.userId === userId) return null;
+                return {
+                    title: msg.name || "Message",
+                    body: msg.image ? "Sent you a Photo" : (msg.voice ? "Sent you a Voice Note" : (msg.text || "Sent you a message"))
+                };
+            });
+            setupNotificationListener(`stories/${friendId}`, "story", (story) => {
+                if (!story) return null;
+                return {
+                    title: story.name || "Story",
+                    body: `${story.name || "Someone"}, story; ${story.title || "New update"}`
+                };
+            });
+        });
+
+        Object.entries(groups).forEach(([groupId, group]) => {
+            if (!group.members || !group.members[userId]) return;
+            setupNotificationListener(`messages/${groupId}`, "message", (msg) => {
+                if (!msg || msg.userId === userId) return null;
+                return {
+                    title: msg.name || group.name || "Message",
+                    body: msg.image ? "Sent you a Photo" : (msg.voice ? "Sent you a Voice Note" : (msg.text || "Sent a message"))
+                };
+            });
         });
     }
 
@@ -1182,6 +1291,40 @@
     }
     window.editCurrentGroup = editCurrentGroup;
 
+    async function generateIcebreaker() {
+        if (!currentGroupId || isDM) return;
+        try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${GROQ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
+                    temperature: 0.8,
+                    messages: [
+                        { role: "system", content: "You create one concise, fun conversation starter for a group chat. Return only the icebreaker text." },
+                        { role: "user", content: `Create a fresh conversation starter for the group named ${currentGroupName.innerText}.` }
+                    ]
+                })
+            });
+            const data = await response.json();
+            const icebreaker = data?.choices?.[0]?.message?.content?.trim();
+            if (!icebreaker) return;
+            await push(ref(db, `messages/${currentGroupId}`), {
+                userId: NEXUS_AI_ID,
+                name: "Nexus AI",
+                text: `✨ **Icebreaker**\n\n${icebreaker}`,
+                time: Date.now(),
+                seen: true
+            });
+        } catch (error) {
+            alert("Couldn't generate an icebreaker right now.");
+        }
+    }
+    window.generateIcebreaker = generateIcebreaker;
+
     function deleteCurrentChat() {
         if (!currentGroupId) return;
         const type = isDM ? "Direct Message Chat" : "Group";
@@ -1218,6 +1361,7 @@
         const container = document.getElementById("group-list");
         container.innerHTML = "";
         const data = snap.val();
+        initNotificationListeners();
         if (data) {
             Object.entries(data).forEach(([id, group]) => {
                 if (group.members && group.members[userId]) {
@@ -1258,6 +1402,7 @@
             }
             document.getElementById("invite-btn").classList.add("hidden");
             document.getElementById("edit-group-btn").classList.add("hidden");
+            document.getElementById("icebreaker-btn").classList.add("hidden");
             document.getElementById("delete-chat-btn").classList.remove("hidden");
         } else {
             groupActions.classList.remove("hidden");
@@ -1265,6 +1410,7 @@
             lucide.createIcons();
             document.getElementById("invite-btn").classList.remove("hidden");
             document.getElementById("edit-group-btn").classList.toggle("hidden", groupCreator !== userId);
+            document.getElementById("icebreaker-btn").classList.remove("hidden");
             document.getElementById("delete-chat-btn").classList.toggle("hidden", groupCreator !== userId);
             statusDiv.innerText = "Group Network Online";
         }
