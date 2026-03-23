@@ -103,6 +103,7 @@
         }
         #main {
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             background-color: var(--bg-deep);
@@ -227,9 +228,18 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            width: 100%;
+            min-width: 0;
+        }
+        #action-btns {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
         }
         #msg-input {
             flex: 1;
+            min-width: 0;
+            width: 100%;
             background-color: var(--bg-item);
             border: 1px solid rgba(0, 212, 255, 0.1);
             border-radius: 12px;
@@ -371,6 +381,32 @@
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @media (max-width: 640px) {
+            #chat-header {
+                padding: 10px 12px;
+                gap: 10px;
+            }
+            #chat {
+                padding: 14px;
+            }
+            #hud {
+                padding: 10px;
+                padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            }
+            .input-row {
+                gap: 8px;
+            }
+            .icon-btn {
+                padding: 9px;
+            }
+            #msg-input {
+                padding: 11px 14px;
+                font-size: 15px;
+            }
+            .bubble {
+                max-width: 88%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -419,6 +455,7 @@
                 <div id="status" class="text-xs text-[var(--text-dim)] uppercase tracking-widest opacity-70">...</div>
             </div>
             <div id="group-actions" class="hidden flex gap-1">
+                <button id="edit-group-btn" onclick="editCurrentGroup()" class="icon-btn hidden" title="Edit Group Name"><i data-lucide="pencil" size="20"></i></button>
                 <button id="delete-chat-btn" onclick="deleteCurrentChat()" class="icon-btn text-red-500 hover:bg-red-500/10" title="Delete Chat"><i data-lucide="trash-2" size="20"></i></button>
                 <button id="invite-btn" onclick="openInviteModal()" class="icon-btn" title="Invite Friend"><i data-lucide="user-plus" size="20"></i></button>
             </div>
@@ -516,7 +553,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, set, onValue, remove, get, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA7aG5ZEZHYc8ai8vtWj_iTSjg95yedCwk",
@@ -568,6 +605,7 @@
     let currentGroupId = null;
     let isDM = false;
     let groupCreator = null;
+    let currentGroupRoomNumber = null;
     let replyTo = null;
     let currentEmojiMsgId = null;
     let currentContextMsgId = null;
@@ -814,9 +852,16 @@
         if (confirm("Remove friend? This will also end your direct chat access.")) {
             remove(ref(db, `users/${userId}/friends/${fId}`));
             remove(ref(db, `users/${fId}/friends/${userId}`));
+            const friendItem = document.getElementById(`sidebar-dm-${getDMId(fId)}`);
+            if (friendItem) friendItem.remove();
+            if (!document.querySelector('#my-friends [id^="sidebar-dm-"]')) {
+                document.getElementById("my-friends").innerHTML = '<div class="text-[10px] text-[var(--accent-blue)] mb-2 uppercase font-bold tracking-widest">Direct Messages</div><div class="text-xs text-[var(--text-dim)] italic p-2">No friends yet. Add friends to start private chats.</div>';
+            }
             if (currentGroupId === getDMId(fId)) {
                 currentGroupId = null;
                 hud.classList.add("hidden");
+                currentGroupName.innerText = "Select a group";
+                statusDiv.innerText = "...";
                 chat.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-[var(--text-dim)] p-8 text-center"><p>Friend removed.</p></div>';
             }
         }
@@ -862,7 +907,7 @@
                     onValue(ref(db, `users/${fId}`), uSnap => {
                         const u = uSnap.val();
                         if (!u) return;
-                        const existing = document.getElementById(`friend-${fId}`);
+                        const existing = document.getElementById(`sidebar-dm-${getDMId(fId)}`);
                         if (existing) existing.remove();
                         const fName = u.name || "Unknown";
                         const div = document.createElement("div");
@@ -926,13 +971,40 @@
     window.toggleSidebar = toggleSidebar;
 
     const onlineRef = ref(db, `users/${userId}/online`);
-    onValue(ref(db, ".info/connected"), (snap) => {
+    const lastSeenRef = ref(db, `users/${userId}/lastSeen`);
+
+    async function updatePresence(isVisible) {
+        await set(onlineRef, Boolean(isVisible));
+        if (!isVisible) {
+            await set(lastSeenRef, Date.now());
+        }
+    }
+
+    onValue(ref(db, ".info/connected"), async (snap) => {
         if (snap.val() === true) {
-            set(onlineRef, true);
-            update(ref(db, `users/${userId}`), { name: userName });
+            onDisconnect(onlineRef).set(false);
+            onDisconnect(lastSeenRef).set(Date.now());
+            await update(ref(db, `users/${userId}`), { name: userName, lastSeen: Date.now() });
+            updatePresence(!document.hidden);
         }
     });
-    window.addEventListener("beforeunload", () => set(onlineRef, false));
+
+    document.addEventListener("visibilitychange", () => {
+        updatePresence(!document.hidden);
+    });
+    window.addEventListener("focus", () => updatePresence(true));
+    window.addEventListener("blur", () => updatePresence(false));
+    window.addEventListener("pagehide", () => updatePresence(false));
+    window.addEventListener("beforeunload", () => updatePresence(false));
+
+    async function editCurrentGroup() {
+        if (!currentGroupId || isDM || groupCreator !== userId) return;
+        const nextName = prompt("Edit group name:", currentGroupName.innerText);
+        if (!nextName || !nextName.trim()) return;
+        await update(ref(db, `groups/${currentGroupId}`), { name: nextName.trim(), updatedAt: Date.now() });
+        currentGroupName.innerText = nextName.trim();
+    }
+    window.editCurrentGroup = editCurrentGroup;
 
     function deleteCurrentChat() {
         if (!currentGroupId) return;
@@ -949,7 +1021,7 @@
                 chat.innerHTML = "";
                 alert("DM messages cleared.");
             } else {
-                onValue(ref(db, `groups/${currentGroupId}/roomNumber`), snap => {
+                get(ref(db, `groups/${currentGroupId}/roomNumber`)).then(snap => {
                     const roomNum = snap.val();
                     if (roomNum) remove(ref(db, `roomNumbers/${roomNum}`));
                     remove(ref(db, `groups/${currentGroupId}`));
@@ -957,8 +1029,10 @@
                     remove(ref(db, `typing/${currentGroupId}`));
                     currentGroupId = null;
                     hud.classList.add("hidden");
+                    currentGroupName.innerText = "Select a group";
+                    statusDiv.innerText = "...";
                     chat.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-[var(--text-dim)] p-8 text-center"><p>Group deleted.</p></div>';
-                }, { onlyOnce: true });
+                });
             }
         }
     }
@@ -987,6 +1061,7 @@
         currentGroupId = id;
         isDM = dm;
         groupCreator = creator;
+        currentGroupRoomNumber = roomNumber;
         currentGroupName.innerText = name;
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         const activeEl = document.getElementById(dm ? `sidebar-dm-${id}` : `sidebar-group-${id}`) || document.getElementById(`friend-${id}`);
@@ -1006,12 +1081,14 @@
                 statusDiv.innerText = "Private Encryption Active";
             }
             document.getElementById("invite-btn").classList.add("hidden");
+            document.getElementById("edit-group-btn").classList.add("hidden");
             document.getElementById("delete-chat-btn").classList.remove("hidden");
         } else {
             groupActions.classList.remove("hidden");
             headerAvatar.innerHTML = `<div class="w-full h-full bg-[var(--bg-item)] rounded-full flex items-center justify-center text-[var(--accent-blue)] border border-[rgba(0,212,255,0.2)]"><i data-lucide="users" size="20"></i></div>`;
             lucide.createIcons();
             document.getElementById("invite-btn").classList.remove("hidden");
+            document.getElementById("edit-group-btn").classList.toggle("hidden", groupCreator !== userId);
             document.getElementById("delete-chat-btn").classList.toggle("hidden", groupCreator !== userId);
             statusDiv.innerText = "Group Network Online";
         }
