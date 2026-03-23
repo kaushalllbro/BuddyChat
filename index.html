@@ -531,7 +531,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const NEXUS_AI_ID = "nexus_ai_agent";
-    const NEXUS_AI_GROUP_ID = `dm_${NEXUS_AI_ID}`;
     const NEXUS_AI_NAME = "Nexus AI";
     const NEXUS_AI_AVATAR = "🧠";
     const GROQ_API_KEY = "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";
@@ -581,6 +580,10 @@
         localStorage.setItem("userId", userId);
     }
 
+    function getNexusAiGroupId(forUserId = userId) {
+        return `dm_${forUserId}_${NEXUS_AI_ID}`;
+    }
+
     ensureNexusMetadata();
     renderNexusAiEntry();
     initFriendListeners();
@@ -622,7 +625,7 @@
     function renderNexusAiEntry() {
         nexusAiEntry.innerHTML = `
             <div class="text-[10px] text-[var(--accent-orange)] mb-2 uppercase font-bold tracking-widest">AI Companion</div>
-            <div id="sidebar-dm-${NEXUS_AI_GROUP_ID}" class="sidebar-item ${currentGroupId === NEXUS_AI_GROUP_ID ? 'active' : ''}">
+            <div id="sidebar-dm-${getNexusAiGroupId()}" class="sidebar-item ${currentGroupId === getNexusAiGroupId() ? 'active' : ''}">
                 <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[rgba(0,212,255,0.12)] border border-[rgba(0,212,255,0.35)] p-1">${getNexusLogoMarkup()}</div>
                 <div class="flex-1 truncate">
                     <div class="font-bold text-sm tracking-wide">${NEXUS_AI_NAME}</div>
@@ -630,9 +633,9 @@
                 </div>
             </div>
         `;
-        const nexusItem = document.getElementById(`sidebar-dm-${NEXUS_AI_GROUP_ID}`);
+        const nexusItem = document.getElementById(`sidebar-dm-${getNexusAiGroupId()}`);
         if (nexusItem) {
-            nexusItem.onclick = () => selectGroup(NEXUS_AI_GROUP_ID, NEXUS_AI_NAME, null, true, null, null, true);
+            nexusItem.onclick = () => selectGroup(getNexusAiGroupId(), NEXUS_AI_NAME, null, true, null, null, true);
         }
         lucide.createIcons();
     }
@@ -935,7 +938,7 @@
         if (!currentGroupId) return;
         const type = isDM ? "Direct Message Chat" : "Group";
         if (confirm(`Are you sure you want to delete this ${type}? All messages will be permanently erased.`)) {
-            if (currentGroupId === NEXUS_AI_GROUP_ID) {
+            if (currentGroupId === getNexusAiGroupId()) {
                 remove(ref(db, `messages/${currentGroupId}`));
                 chat.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-[var(--text-dim)] p-8 text-center"><p>Nexus AI chat cleared.</p></div>';
                 return;
@@ -1064,7 +1067,7 @@
         input.value = "";
         cancelReply();
         toggleSendBtn();
-        if (currentGroupId === NEXUS_AI_GROUP_ID && text) {
+        if (currentGroupId === getNexusAiGroupId() && text) {
             triggerNexusReply();
         }
     }
@@ -1081,7 +1084,7 @@
                 await push(ref(db, `messages/${currentGroupId}`), { userId, name: userName, image: e.target.result, time: Date.now(), seen: false, reply: replyTo });
                 fileInput.value = "";
                 cancelReply();
-                if (currentGroupId === NEXUS_AI_GROUP_ID) triggerNexusReply();
+                if (currentGroupId === getNexusAiGroupId()) triggerNexusReply();
             };
             reader.readAsDataURL(file);
         }
@@ -1115,7 +1118,7 @@
         nexusReplyInFlight = true;
         typingDiv.innerText = `${NEXUS_AI_NAME} is thinking...`;
         try {
-            const historySnap = await get(ref(db, `messages/${NEXUS_AI_GROUP_ID}`));
+            const historySnap = await get(ref(db, `messages/${getNexusAiGroupId()}`));
             const history = historySnap.exists() ? Object.values(historySnap.val()) : [];
             const messages = [{ role: "system", content: NEXUS_SYSTEM_PROMPT }];
             history.slice(-12).forEach(message => {
@@ -1147,7 +1150,7 @@
             }
             const data = await response.json();
             const content = data?.choices?.[0]?.message?.content?.trim() || "I couldn't generate a reply just now.";
-            await push(ref(db, `messages/${NEXUS_AI_GROUP_ID}`), {
+            await push(ref(db, `messages/${getNexusAiGroupId()}`), {
                 userId: NEXUS_AI_ID,
                 name: NEXUS_AI_NAME,
                 text: content,
@@ -1155,7 +1158,7 @@
                 seen: true
             });
         } catch (error) {
-            await push(ref(db, `messages/${NEXUS_AI_GROUP_ID}`), {
+            await push(ref(db, `messages/${getNexusAiGroupId()}`), {
                 userId: NEXUS_AI_ID,
                 name: NEXUS_AI_NAME,
                 text: `**Connection issue**\n\n*I couldn't reach Groq right now.*\n\n\
@@ -1335,7 +1338,7 @@ Error: \`${String(error.message || error)}\``,
     let audioChunks = [];
     recordBtn.onmousedown = recordBtn.ontouchstart = async e => {
         e.preventDefault();
-        if (!currentGroupId || currentGroupId === NEXUS_AI_GROUP_ID) return;
+        if (!currentGroupId || currentGroupId === getNexusAiGroupId()) return;
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
