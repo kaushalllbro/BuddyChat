@@ -438,9 +438,11 @@
                     <input type="text" id="friend-id-input" placeholder="Enter User ID" class="flex-1 bg-[var(--bg-item)] border border-[rgba(0,212,255,0.2)] rounded-md p-2 text-sm text-white outline-none focus:border-[var(--accent-blue)]">
                     <button onclick="sendFriendRequest()" class="bg-[var(--accent-orange)] p-2 rounded-md text-white shadow-[0_0_10px_rgba(255,140,0,0.3)] border-none"><i data-lucide="user-plus" size="18"></i></button>
                 </div>
+                <div id="stories-panel" class="mb-4"></div>
                 <div id="incoming-requests" class="mb-4"></div>
                 <div id="nexus-ai-entry" class="mb-4"></div>
                 <div id="my-friends"></div>
+                <div id="blocked-list" class="mt-4"></div>
             </div>
         </div>
     </aside>
@@ -550,6 +552,25 @@
             <button onclick="closeModals()" class="bg-[#3b4a54]">Close</button>
         </div>
     </div>
+    <div id="story-modal" class="modal-overlay">
+        <div class="modal relative">
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-[var(--text-dim)] hover:text-white bg-transparent border-none"><i data-lucide="x" size="20"></i></button>
+            <h2 class="text-xl font-bold">Add Story</h2>
+            <textarea id="story-text-input" rows="4" placeholder="What's on your story?"></textarea>
+            <input type="file" id="story-file-input" accept="image/*">
+            <div class="flex gap-2">
+                <button onclick="createStory()" class="flex-1">Post Story</button>
+                <button onclick="closeModals()" class="flex-1 bg-[#3b4a54]">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div id="story-viewer-modal" class="modal-overlay">
+        <div class="modal relative">
+            <button onclick="closeModals()" class="absolute top-4 right-4 text-[var(--text-dim)] hover:text-white bg-transparent border-none"><i data-lucide="x" size="20"></i></button>
+            <h2 id="story-viewer-name" class="text-xl font-bold">Story</h2>
+            <div id="story-viewer-body" class="flex flex-col gap-3 text-sm text-[var(--text-main)]"></div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
@@ -596,6 +617,8 @@
     const userAvatar = document.getElementById("user-avatar");
     const friendReqBadge = document.getElementById("friend-req-badge");
     const nexusAiEntry = document.getElementById("nexus-ai-entry");
+    const storiesPanel = document.getElementById("stories-panel");
+    const blockedList = document.getElementById("blocked-list");
 
     let userId = localStorage.getItem("userId");
     let userName = localStorage.getItem("userName");
@@ -613,6 +636,7 @@
     let messageListeners = [];
     let listenersInitialized = false;
     let nexusReplyInFlight = false;
+    let blockedUsers = {};
 
     if (!userId) {
         userId = "U_" + Math.random().toString(36).substring(2, 10);
@@ -626,6 +650,7 @@
     ensureNexusMetadata();
     renderNexusAiEntry();
     initFriendListeners();
+    initStoriesListener();
 
     if (!userName) {
         openProfileModal(true);
@@ -842,6 +867,9 @@
         const snap = await get(ref(db, `idMap/${inputVal}`));
         if (snap.exists()) targetId = snap.val();
         if (targetId === userId || targetId === NEXUS_AI_ID) return;
+        if (blockedUsers[targetId]) return alert("You blocked this user.");
+        const blockedByTarget = await get(ref(db, `users/${targetId}/blocked/${userId}`));
+        if (blockedByTarget.exists()) return alert("This profile is unavailable.");
         set(ref(db, `friendRequests/${targetId}/incoming/${userId}`), { name: userName });
         set(ref(db, `friendRequests/${userId}/outgoing/${targetId}`), true);
         document.getElementById("friend-id-input").value = "";
@@ -880,16 +908,47 @@
     function initFriendListeners() {
         if (listenersInitialized) return;
         listenersInitialized = true;
+
+        onValue(ref(db, `users/${userId}/blocked`), snap => {
+            blockedUsers = snap.val() || {};
+            const ids = Object.keys(blockedUsers);
+            if (!ids.length) {
+                blockedList.innerHTML = "";
+                return;
+            }
+
+            blockedList.innerHTML = '<div class="text-[10px] text-red-400 mb-2 uppercase font-bold tracking-widest">Blocked Profiles</div>';
+            ids.forEach(blockedId => {
+                onValue(ref(db, `users/${blockedId}`), blockedSnap => {
+                    const blocked = blockedSnap.val() || {};
+                    const row = document.createElement("div");
+                    row.className = "flex items-center justify-between bg-[var(--bg-item)] p-3 rounded-xl mb-2";
+                    row.dataset.blockedId = blockedId;
+                    row.innerHTML = `
+                        <div>
+                            <div class="font-bold text-sm">${blocked.name || blockedId}</div>
+                            <div class="text-[10px] text-[var(--text-dim)]">${blocked.customId || blockedId}</div>
+                        </div>
+                        <button onclick="unblockUser('${blockedId}')" class="text-[var(--accent-orange)] bg-transparent border-none font-bold">Unblock</button>
+                    `;
+                    const existing = blockedList.querySelector(`[data-blocked-id="${blockedId}"]`);
+                    if (existing) existing.remove();
+                    blockedList.appendChild(row);
+                }, { onlyOnce: true });
+            });
+        });
+
         onValue(ref(db, `friendRequests/${userId}/incoming`), snap => {
             const container = document.getElementById("incoming-requests");
             container.innerHTML = "";
             const data = snap.val();
-            const count = data ? Object.keys(data).length : 0;
+            const visibleRequests = data ? Object.entries(data).filter(([id]) => !blockedUsers[id]) : [];
+            const count = visibleRequests.length;
             friendReqBadge.innerText = count;
             friendReqBadge.classList.toggle("hidden", count === 0);
             if (data) {
                 container.innerHTML = '<div class="text-[10px] text-[#8696a0] mb-2 uppercase font-bold">Requests</div>';
-                Object.entries(data).forEach(([id, req]) => {
+                visibleRequests.forEach(([id, req]) => {
                     const div = document.createElement("div");
                     div.className = "flex items-center justify-between bg-[#202c33] p-2 rounded-md mb-2";
                     div.innerHTML = `<span class="text-sm truncate">${req.name}</span><button onclick="acceptFriendRequest('${id}')" class="text-[#00a884] bg-transparent border-none"><i data-lucide="check-circle" size="18"></i></button>`;
@@ -907,7 +966,7 @@
                 Object.keys(data).forEach(fId => {
                     onValue(ref(db, `users/${fId}`), uSnap => {
                         const u = uSnap.val();
-                        if (!u) return;
+                        if (!u || blockedUsers[fId]) return;
                         const existing = document.getElementById(`sidebar-dm-${getDMId(fId)}`);
                         if (existing) existing.remove();
                         const fName = u.name || "Unknown";
@@ -917,7 +976,8 @@
                         const avatarHtml = u.avatar
                             ? `<div class="w-10 h-10 bg-[var(--bg-item)] rounded-full flex items-center justify-center text-[var(--accent-orange)] font-bold border border-[rgba(0,212,255,0.2)] overflow-hidden"><img src="${u.avatar}" class="avatar-img" referrerPolicy="no-referrer"></div>`
                             : `<div class="w-10 h-10 bg-[var(--bg-item)] rounded-full flex items-center justify-center text-[var(--accent-orange)] font-bold border border-[rgba(0,212,255,0.2)] overflow-hidden">${fName.charAt(0).toUpperCase()}</div>`;
-                        div.innerHTML = `${avatarHtml}<div class="flex-1 truncate"><div class="font-bold text-sm tracking-wide">${fName}</div><div class="text-[10px] ${u.online ? 'text-green-400' : 'text-[var(--text-dim)]'} uppercase">${u.online ? 'Online' : 'Offline'}</div></div><button onclick="event.stopPropagation(); removeFriend('${fId}')" class="icon-btn text-red-500/50 hover:text-red-500"><i data-lucide="user-minus" size="16"></i></button>`;
+                        const safeName = fName.replace(/'/g, "\\'");
+                        div.innerHTML = `${avatarHtml}<div class="flex-1 truncate"><div class="font-bold text-sm tracking-wide">${fName}</div><div class="text-[10px] ${u.online ? 'text-green-400' : 'text-[var(--text-dim)]'} uppercase">${u.online ? 'Online' : 'Offline'}</div></div><div class="flex items-center"><button onclick="event.stopPropagation(); blockUser('${fId}', '${safeName}')" class="icon-btn text-yellow-400/70 hover:text-yellow-300"><i data-lucide="ban" size="16"></i></button><button onclick="event.stopPropagation(); removeFriend('${fId}')" class="icon-btn text-red-500/50 hover:text-red-500"><i data-lucide="user-minus" size="16"></i></button></div>`;
                         div.onclick = () => selectGroup(getDMId(fId), fName, null, true, null, u.avatar);
                         container.appendChild(div);
                         lucide.createIcons();
@@ -931,13 +991,128 @@
 
     function getDMId(friendId) { return [userId, friendId].sort().join("_dm_"); }
 
+    function openStoryModal() {
+        document.getElementById("story-modal").style.display = "flex";
+    }
+    window.openStoryModal = openStoryModal;
+
+    async function createStory() {
+        const textValue = document.getElementById("story-text-input").value.trim();
+        const file = document.getElementById("story-file-input").files[0];
+        if (!textValue && !file) return;
+
+        const saveStory = async (image = "") => {
+            await push(ref(db, `stories/${userId}`), {
+                userId,
+                name: userName,
+                avatar: userAvatarUrl,
+                text: textValue,
+                image,
+                createdAt: Date.now()
+            });
+            document.getElementById("story-text-input").value = "";
+            document.getElementById("story-file-input").value = "";
+            closeModals();
+        };
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => saveStory(e.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            await saveStory();
+        }
+    }
+    window.createStory = createStory;
+
+    function viewStory(ownerId, storyId) {
+        get(ref(db, `stories/${ownerId}/${storyId}`)).then(snap => {
+            const story = snap.val();
+            if (!story) return;
+            document.getElementById("story-viewer-name").innerText = `${story.name || "Story"} • ${new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            document.getElementById("story-viewer-body").innerHTML = `
+                ${story.image ? `<img src="${story.image}" class="w-full rounded-xl max-h-80 object-cover" referrerPolicy="no-referrer">` : ""}
+                ${story.text ? `<p class="leading-relaxed">${story.text}</p>` : '<p class="italic text-[var(--text-dim)]">Photo story</p>'}
+            `;
+            document.getElementById("story-viewer-modal").style.display = "flex";
+        });
+    }
+    window.viewStory = viewStory;
+
+    function blockUser(targetId, targetName = "this user") {
+        if (!targetId || targetId === userId || targetId === NEXUS_AI_ID) return;
+        if (!confirm(`Block ${targetName}? They will be removed from friends and hidden from requests/stories.`)) return;
+
+        set(ref(db, `users/${userId}/blocked/${targetId}`), true);
+        remove(ref(db, `users/${userId}/friends/${targetId}`));
+        remove(ref(db, `users/${targetId}/friends/${userId}`));
+        remove(ref(db, `friendRequests/${userId}/incoming/${targetId}`));
+        remove(ref(db, `friendRequests/${userId}/outgoing/${targetId}`));
+        remove(ref(db, `friendRequests/${targetId}/incoming/${userId}`));
+        remove(ref(db, `friendRequests/${targetId}/outgoing/${userId}`));
+
+        const friendItem = document.getElementById(`sidebar-dm-${getDMId(targetId)}`);
+        if (friendItem) friendItem.remove();
+
+        if (currentGroupId === getDMId(targetId)) {
+            currentGroupId = null;
+            hud.classList.add("hidden");
+            currentGroupName.innerText = "Select a group";
+            statusDiv.innerText = "...";
+            chat.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-[var(--text-dim)] p-8 text-center"><p>User blocked.</p></div>';
+        }
+    }
+    window.blockUser = blockUser;
+
+    function unblockUser(targetId) {
+        remove(ref(db, `users/${userId}/blocked/${targetId}`));
+    }
+    window.unblockUser = unblockUser;
+
+    function initStoriesListener() {
+        onValue(ref(db, "stories"), async snap => {
+            const stories = snap.val() || {};
+            const friendsSnap = await get(ref(db, `users/${userId}/friends`));
+            const friends = friendsSnap.val() || {};
+            const allowedOwners = new Set([userId, ...Object.keys(friends)]);
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+
+            let html = `
+                <div class="text-[10px] text-[var(--accent-blue)] mb-2 uppercase font-bold tracking-widest flex items-center justify-between">
+                    <span>Stories</span>
+                    <button onclick="openStoryModal()" class="text-[var(--accent-orange)] text-[11px] font-bold">Add</button>
+                </div>
+                <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+            `;
+
+            Object.entries(stories).forEach(([ownerId, ownerStories]) => {
+                if (!allowedOwners.has(ownerId) || blockedUsers[ownerId]) return;
+                const validStories = Object.entries(ownerStories || {}).filter(([, story]) => story && story.createdAt >= cutoff);
+                if (!validStories.length) return;
+                validStories.sort((a, b) => b[1].createdAt - a[1].createdAt);
+                const [storyId, latestStory] = validStories[0];
+                html += `
+                    <button onclick="viewStory('${ownerId}', '${storyId}')" class="min-w-[72px] flex flex-col items-center gap-2 bg-[var(--bg-item)] rounded-2xl p-2 border border-[rgba(255,255,255,0.06)]">
+                        <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--accent-orange)] bg-[var(--bg-panel)] flex items-center justify-center text-white font-bold">
+                            ${latestStory.image ? `<img src="${latestStory.image}" class="w-full h-full object-cover" referrerPolicy="no-referrer">` : (latestStory.name || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <span class="text-[11px] truncate max-w-[60px]">${ownerId === userId ? "You" : (latestStory.name || "Friend")}</span>
+                    </button>
+                `;
+            });
+
+            html += "</div>";
+            storiesPanel.innerHTML = html;
+        });
+    }
+
     function renderInviteFriends() {
         const container = document.getElementById("invite-friend-list");
         container.innerHTML = "";
         onValue(ref(db, `users/${userId}/friends`), snap => {
             const friends = snap.val();
             if (friends) {
-                Object.keys(friends).forEach(fId => {
+                Object.keys(friends).filter(fId => !blockedUsers[fId]).forEach(fId => {
                     onValue(ref(db, `users/${fId}/name`), nameSnap => {
                         const div = document.createElement("div");
                         div.className = "flex items-center justify-between bg-[#2a3942] p-3 rounded-md";
